@@ -1,15 +1,14 @@
 const express = require("express");
 const db = require("./dbConfig/dbConfig.js");
-const Cliente = require("./services/clients/clients.model.js");
-const app = express();
-const createClient = require("./services/clients/createClients.js");
+const app = express({});
+const router = require("./routes/clients.js");
 const port = 3000;
 
 db();
 
 app.use(express.json());
 
-app.post("/clients", createClient);
+app.use("/clientes", router);
 
 app.get("/", (req, res) => {
 	res.send("Hello World!");
