@@ -1,8 +1,8 @@
 const express = require("express");
-const db = require("./dbConfig/dbConfig.js");
-const app = express({});
-const router = require("./routes/clients.js");
-const port = 3000;
+const app = express();
+const router = require("./src/routes/clients.js");
+const db = require("./configs/dbConfig.js");
+const port = process.env.PORT || 3000;
 
 db();
 
