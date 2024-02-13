@@ -1,10 +1,10 @@
 const express = require("express");
 const app = express();
 const router = require("./src/routes/clients.js");
-const db = require("./configs/dbConfig.js");
-const port = 3000;
+const { db } = require("./configs/dbConfig.js");
+const port = process.env.PORT_SERVER || 4000;
 
-db;
+db();
 
 app.use(express.json());
 

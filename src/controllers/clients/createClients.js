@@ -1,21 +1,21 @@
-const { pool } = require("../../../configs/dbConfig");
+const { pool: pool } = require("../../../configs/dbConfig");
 
 const transaction = async function (req, res) {
 	const { id } = req.params;
 	const cliente = await pool.query(`select * from clientes where id = ${id}`);
-	console.log(cliente.rows[0].id);
+
 	if (!cliente.rows[0].id) {
 		return res.status(404).json({ message: "Usuário não cadastrado" });
 	}
 	const { valor, tipo, descricao } = req.body;
-	// melhorar validação depo
+
 	if (!valor || !tipo || !descricao) {
 		return res
 			.status(400)
 			.json({ message: "Campos obrigatórios não preenchidos" });
 	}
 	let saldo = await pool.query(`select valor from saldos where id = ${id}`);
-	console.log("saldo", saldo);
+
 	if (tipo === "d") {
 		saldo.rows[0].valor -= Number(valor);
 		if (-cliente.rows[0].limite > saldo) {
@@ -43,28 +43,29 @@ const transaction = async function (req, res) {
 const extrato = async function (req, res) {
 	const { id } = req.params;
 
-	const cliente = await Cliente.findOne({ id: id });
-	if (!cliente) {
+	const cliente = await pool.query(`select * from clientes where id = ${id}`);
+
+	if (!cliente.rows[0].id) {
 		return res.status(404).json({ message: "Usuário não cadastrado" });
 	}
 
-	const transac = await Transacoes.findOne({ id: id }, "transactions", {
-		limit: 10,
-	})
-		.where("transactions")
-		.slice(-10);
+	const saldo = await pool.query(
+		`select valor from saldos where cliente_id = ${id}`
+	);
 
+	const transac = await pool.query(
+		`select * from transacoes where cliente_id =${id} ORDER BY id DESC LIMIT 10`
+	);
 	res.status(200).json({
 		saldo: {
-			total: cliente.saldo_inicial,
-			data_extrato: Date.now(),
-			limite: cliente.limite,
+			total: saldo.rows[0].valor,
+			data_extrato: new Date().toISOString(),
+			limite: cliente.rows[0].limite,
 		},
-		ultimas_transacoes: transac.transactions,
+		ultimas_transacoes: transac.rows,
 	});
 };
 module.exports = {
-	// createClient,
 	transaction,
 	extrato,
 };
