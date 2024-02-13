@@ -1,24 +1,10 @@
-// Purpose: Create a new client in the database.
-const Cliente = require("../../models/clients.model.js");
-const Transacoes = require("../../models/transactions.model.js");
-
-const createClient = async function (req, res) {
-	const { id, limite, saldo_inicial } = req.body;
-
-	const result = await Cliente.create({
-		id: id,
-		limite: limite,
-		saldo_inicial: saldo_inicial,
-	});
-
-	res.send(result);
-};
+const { pool } = require("../../../configs/dbConfig");
 
 const transaction = async function (req, res) {
 	const { id } = req.params;
-	const cliente = await Cliente.findOne({ id: id });
-	console.log(cliente);
-	if (!cliente) {
+	const cliente = await pool.query(`select * from clientes where id = ${id}`);
+	console.log(cliente.rows[0].id);
+	if (!cliente.rows[0].id) {
 		return res.status(404).json({ message: "Usuário não cadastrado" });
 	}
 	const { valor, tipo, descricao } = req.body;
@@ -28,49 +14,30 @@ const transaction = async function (req, res) {
 			.status(400)
 			.json({ message: "Campos obrigatórios não preenchidos" });
 	}
-	let saldo;
+	let saldo = await pool.query(`select valor from saldos where id = ${id}`);
+	console.log("saldo", saldo);
 	if (tipo === "d") {
-		saldo = cliente.saldo_inicial - Number(valor);
-
-		if (-cliente.limite <= saldo) {
-			cliente.saldo_inicial = saldo;
-		} else {
+		saldo.rows[0].valor -= Number(valor);
+		if (-cliente.rows[0].limite > saldo) {
 			return res.status(422).json({ message: "Limite insuficiente" });
 		}
 	}
 	if (tipo === "c") {
-		saldo = cliente.saldo_inicial + Number(valor);
-		cliente.saldo_inicial = saldo;
+		saldo.rows[0].valor += Number(valor);
 	}
-	cliente.save();
 
-	const transac = await Transacoes.findOne({ id: id });
-	if (!transac) {
-		const transsave = await Transacoes.create({
-			id: id,
-			transactions: [
-				{
-					valor: valor,
-					tipo: tipo,
-					descricao: descricao,
-					data_realizada: Date.now(),
-				},
-			],
-		});
-		transsave.save();
-	} else {
-		transac.transactions.push({
-			valor: valor,
-			tipo: tipo,
-			descricao: descricao,
-			data_realizada: Date.now(),
-		});
-		transac.save();
-	}
+	await pool.query(
+		`UPDATE saldos SET valor=${saldo.rows[0].valor} where cliente_id = ${id}`
+	);
+	await pool.query(
+		`INSERT INTO transacoes(cliente_id,tipo,valor,realizado_em,descricao) VALUES (${Number(
+			id
+		)},'${tipo}',${Number(valor)},'${new Date().toISOString()}','${descricao}')`
+	);
 
 	res
 		.status(200)
-		.json({ limite: cliente.limite, saldo: cliente.saldo_inicial });
+		.json({ limite: cliente.rows[0].limite, saldo: saldo.rows[0].valor });
 };
 
 const extrato = async function (req, res) {
@@ -96,4 +63,8 @@ const extrato = async function (req, res) {
 		ultimas_transacoes: transac.transactions,
 	});
 };
-module.exports = { createClient, transaction, extrato };
+module.exports = {
+	// createClient,
+	transaction,
+	extrato,
+};
