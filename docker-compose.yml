@@ -18,11 +18,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "100MB"
 
   api02:
     # Essa sintaxe reusa o que foi declarado em 'api01'.
     <<: *api
     hostname: api02
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "100MB"
     environment:
       - HOST=db
       - PORT_SERVER=8082
@@ -40,14 +50,28 @@ services:
     ports:
       # Obrigatório expor/usar a porta 9999 no load balancer!
       - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "100MB"
 
   db:
     image: postgres:latest
     restart: always
+    deploy:
+      resources:
+        limits:
+          # Note que a soma de todos os limites dos serviços
+          # aqui declarados é de 1.5 unidades de CPU e 550MB
+          # de memória. A distribuição feita aqui é apenas
+          # um exemplo – distribua como quiser.
+          cpus: "0.3"
+          memory: "200MB"
     environment:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgress
+      - POSTGRES_DB=postgres
     command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096
     healthcheck:
       #CHANGE 1: this command checks if the database is ready, right on the source db server

@@ -1,8 +1,16 @@
-const { pool: pool } = require("../../../configs/dbConfig");
+"use strict";
 
-const transaction = async function (req, res) {
+const { pool: pool } = require("../../../configs/dbConfig");
+const {
+	createTransaction,
+	findSaldo,
+	updateSaldo,
+	findCliente,
+} = require("./queries");
+
+async function transaction(req, res) {
 	const { id } = req.params;
-	const cliente = await pool.query(`select * from clientes where id = ${id}`);
+	const cliente = await pool.query(findCliente, [id]);
 
 	if (!cliente.rows[0].id) {
 		return res.status(404).json({ message: "Usuário não cadastrado" });
@@ -14,7 +22,7 @@ const transaction = async function (req, res) {
 			.status(400)
 			.json({ message: "Campos obrigatórios não preenchidos" });
 	}
-	let saldo = await pool.query(`select valor from saldos where id = ${id}`);
+	const saldo = await pool.query(findSaldo, [id]);
 
 	if (tipo === "d") {
 		saldo.rows[0].valor -= Number(valor);
@@ -26,21 +34,25 @@ const transaction = async function (req, res) {
 		saldo.rows[0].valor += Number(valor);
 	}
 
-	await pool.query(
-		`UPDATE saldos SET valor=${saldo.rows[0].valor} where cliente_id = ${id}`
-	);
-	await pool.query(
-		`INSERT INTO transacoes(cliente_id,tipo,valor,realizado_em,descricao) VALUES (${Number(
-			id
-		)},'${tipo}',${Number(valor)},'${new Date().toISOString()}','${descricao}')`
-	);
+	try {
+		pool.query(updateSaldo, [saldo.rows[0].valor, id]);
+		pool.query(createTransaction, [
+			id,
+			tipo,
+			valor,
+			new Date().toISOString(),
+			descricao,
+		]);
+	} catch (error) {
+		console.log(error);
+	}
 
 	res
 		.status(200)
 		.json({ limite: cliente.rows[0].limite, saldo: saldo.rows[0].valor });
-};
+}
 
-const extrato = async function (req, res) {
+async function extrato(req, res) {
 	const { id } = req.params;
 
 	const cliente = await pool.query(`select * from clientes where id = ${id}`);
@@ -64,7 +76,7 @@ const extrato = async function (req, res) {
 		},
 		ultimas_transacoes: transac.rows,
 	});
-};
+}
 module.exports = {
 	transaction,
 	extrato,
