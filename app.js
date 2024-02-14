@@ -4,7 +4,11 @@ const router = require("./src/routes/clients.js");
 const { db } = require("./configs/dbConfig.js");
 const port = process.env.PORT_SERVER || 4000;
 
-db();
+try {
+	db();
+} catch (error) {
+	console.log(error);
+}
 
 app.use(express.json());
 

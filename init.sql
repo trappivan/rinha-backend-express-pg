@@ -25,15 +25,11 @@ CREATE TABLE saldos (
 CREATE INDEX ON public.transacoes (cliente_id);
 CREATE INDEX ON public.transacoes (cliente_id, realizado_em DESC);
 
-DO $$
-BEGIN
-  INSERT INTO clientes (nome, limite)
-  VALUES
+INSERT INTO clientes (nome, limite)
+VALUES
     ('o barato sai caro', 1000 * 100),
     ('zan corp ltda', 800 * 100),
     ('les cruders', 10000 * 100),
     ('padaria joia de cocaia', 100000 * 100),
     ('kid mais', 5000 * 100);
-   	INSERT INTO saldos (cliente_id, valor)
-		SELECT id, 0 FROM clientes;
-END; $$
+INSERT INTO saldos (cliente_id, valor) SELECT id, 0 FROM clientes;

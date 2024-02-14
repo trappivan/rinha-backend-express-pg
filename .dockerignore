@@ -1,4 +1,6 @@
-./node_modules
+nginx.conf
 Dockerfile
-.dockerignore
-docker-composer.yml
+docker-compose.yml
+init.sql
+.gitignore
+node_modules
