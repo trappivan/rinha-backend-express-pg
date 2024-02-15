@@ -6,6 +6,7 @@ const {
 	findSaldo,
 	updateSaldo,
 	findCliente,
+	getLastTransactions,
 } = require("./queries");
 
 async function transaction(req, res) {
@@ -55,19 +56,15 @@ async function transaction(req, res) {
 async function extrato(req, res) {
 	const { id } = req.params;
 
-	const cliente = await pool.query(`select * from clientes where id = ${id}`);
+	const cliente = await pool.query(findCliente, [id]);
 
 	if (!cliente.rows[0].id) {
 		return res.status(404).json({ message: "Usuário não cadastrado" });
 	}
 
-	const saldo = await pool.query(
-		`select valor from saldos where cliente_id = ${id}`
-	);
+	const saldo = await pool.query(findSaldo, [id]);
 
-	const transac = await pool.query(
-		`select * from transacoes where cliente_id =${id} ORDER BY id DESC LIMIT 10`
-	);
+	const transac = await pool.query(getLastTransactions, [id]);
 	res.status(200).json({
 		saldo: {
 			total: saldo.rows[0].valor,
