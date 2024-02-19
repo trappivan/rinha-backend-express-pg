@@ -12,8 +12,6 @@
 	"dependencies": {
 		"dotenv": "^16.4.1",
 		"express": "^4.18.2",
-		"nodemon": "^3.0.3",
-		"pg": "^8.11.3",
-		"worker-threads-pool": "^2.0.0"
+		"pg": "^8.11.3"
 	}
 }

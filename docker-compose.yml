@@ -22,7 +22,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "90MB"
+          memory: "150MB"
 
   api02:
     # Essa sintaxe reusa o que foi declarado em 'api01'.
@@ -32,7 +32,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "90MB"
+          memory: "150MB"
     environment:
       - HOST=db
       - PORT_SERVER=8082
@@ -54,7 +54,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "70MB"
+          memory: "50MB"
 
   db:
     image: postgres:latest
@@ -67,7 +67,7 @@ services:
           # de memória. A distribuição feita aqui é apenas
           # um exemplo – distribua como quiser.
           cpus: "0.5"
-          memory: "300MB"
+          memory: "200MB"
     environment:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_USER=postgres
@@ -84,9 +84,6 @@ services:
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgres.conf:/docker-entrypoint-initdb.d/postgres.conf
-
-volumes:
-  db-data:
 
 # O uso do modo `bridge` deve ser adequado à carga que será usada no teste.
 # A edição anterior se beneficiou do modo host pois o volume de requisições
