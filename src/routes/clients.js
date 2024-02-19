@@ -16,8 +16,9 @@ router.route("/:id/transacoes").post(async (req, res) => {
 		!tipo ||
 		!descricao ||
 		descricao.length > 10 ||
-		!id ||
-		id.length > 1
+		id.length > 1 ||
+		id < 1 ||
+		id > 5
 	) {
 		return res
 			.status(400)
@@ -30,9 +31,6 @@ router.route("/:id/transacoes").post(async (req, res) => {
 		(err, result) => {
 			if (err) {
 				return res.status(500).json({ message: err.message });
-			}
-			if (result.rows[0].code_int === 1) {
-				return res.status(404).json({ message: "Usuário não cadastrado" });
 			}
 			if (result.rows[0].code_int === 2) {
 				return res.status(422).json({ message: "Limite insuficiente" });
@@ -47,30 +45,23 @@ router.route("/:id/transacoes").post(async (req, res) => {
 
 router.route("/:id/extrato").get(async (req, res) => {
 	const { id } = req.params;
-
-	pool.query(findCliente, [id], (err, result) => {
+	if (id < 1 || id > 5) {
+		return res.status(422).json({ message: "ID inválido" });
+	}
+	pool.query(getLastTransactions, [id], (err, resultTransac) => {
 		if (err) {
 			return res.status(500).json({ message: err.message });
 		}
-
-		if (!result.rows[0]) {
-			return res.status(404).json({ message: "Usuário não cadastrado" });
+		if (!err) {
+			return res.status(200).json({
+				saldo: {
+					total: result.rows[0].saldo,
+					data_extrato: new Date().toISOString(),
+					limite: result.rows[0].limite,
+				},
+				ultimas_transacoes: resultTransac.rows,
+			});
 		}
-		pool.query(getLastTransactions, [id], (err, resultTransac) => {
-			if (err) {
-				return res.status(500).json({ message: err.message });
-			}
-			if (!err) {
-				return res.status(200).json({
-					saldo: {
-						total: result.rows[0].saldo,
-						data_extrato: new Date().toISOString(),
-						limite: result.rows[0].limite,
-					},
-					ultimas_transacoes: resultTransac.rows,
-				});
-			}
-		});
 	});
 });
 
