@@ -7,7 +7,6 @@ const pool = new Client({
 	host: process.env.HOST,
 	password: process.env.PASSWORD,
 	port: process.env.PORT,
-	max: 20,
 });
 
 const db = async () => {

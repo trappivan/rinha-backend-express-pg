@@ -26,6 +26,44 @@ VALUES
     ('padaria joia de cocaia', 100000 * 100, 0 ),
     ('kid mais', 5000 * 100, 0);
 
+CREATE OR REPLACE FUNCTION generate_json_output(_id integer) RETURNS JSON AS $$
+DECLARE
+  saldo_record RECORD;
+  ultimas_transacoes_json json[];
+  ultimas_transacoes_record RECORD;
+  saldo_ret INTEGER := 0;
+  limite_ret INTEGER := 0;
+BEGIN
+  SELECT saldo, limite INTO saldo_ret, limite_ret FROM clientes WHERE id = _id;
+
+  FOR ultimas_transacoes_record IN 
+    SELECT * FROM transacoes WHERE cliente_id = _id ORDER BY realizado_em DESC LIMIT 10
+  LOOP
+    ultimas_transacoes_json := ultimas_transacoes_json || 
+      ARRAY[json_build_object(
+        'valor', ultimas_transacoes_record.valor,
+        'tipo', ultimas_transacoes_record.tipo,
+        'descricao', ultimas_transacoes_record.descricao,
+        'realizado_em', ultimas_transacoes_record.realizado_em
+      )];
+  END LOOP;
+
+  IF array_length(ultimas_transacoes_json, 1) IS NULL THEN
+    ultimas_transacoes_json := array[]::varchar[];
+  END IF;
+
+  -- Construct the JSON object
+  RETURN json_build_object(
+    'saldo', json_build_object(
+      'total', saldo_ret,
+      'data_extrato', NOW(),
+      'limite', limite_ret
+    ),
+    'ultimas_transacoes', ultimas_transacoes_json
+  );
+END;
+$$ LANGUAGE plpgsql;
+
 create type inserir_transacao_result as (
 	result_code int,
 	result_message varchar(100),

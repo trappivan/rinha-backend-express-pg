@@ -2,10 +2,7 @@
 
 const express = require("express");
 const { pool } = require("../../configs/dbConfig");
-const {
-	findCliente,
-	getLastTransactions,
-} = require("../controllers/clients/queries");
+const { getLastTransactions } = require("../controllers/clients/queries");
 const router = express.Router();
 
 router.route("/:id/transacoes").post(async (req, res) => {
@@ -34,11 +31,11 @@ router.route("/:id/transacoes").post(async (req, res) => {
 			}
 			if (result.rows[0].code_int === 2) {
 				return res.status(422).json({ message: "Limite insuficiente" });
-			} else {
-				res
-					.status(200)
-					.json({ limite: result.rows[0].limite, saldo: result.rows[0].saldo });
 			}
+
+			res
+				.status(200)
+				.json({ limite: result.rows[0].limite, saldo: result.rows[0].saldo });
 		}
 	);
 });
@@ -52,16 +49,8 @@ router.route("/:id/extrato").get(async (req, res) => {
 		if (err) {
 			return res.status(500).json({ message: err.message });
 		}
-		if (!err) {
-			return res.status(200).json({
-				saldo: {
-					total: result.rows[0].saldo,
-					data_extrato: new Date().toISOString(),
-					limite: result.rows[0].limite,
-				},
-				ultimas_transacoes: resultTransac.rows,
-			});
-		}
+
+		return res.status(200).json(resultTransac.rows[0].generate_json_output);
 	});
 });
 
